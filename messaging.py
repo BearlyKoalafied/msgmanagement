@@ -28,14 +28,14 @@ RETRY_PARAMS_SHORT = {'wait':tenacity.wait_fixed(1),
                 'after':tenacity.after_log(logger.get_logger(logger.MSG_LOGGER), logging.WARNING),
                 'reraise':True}
 
-@tenacity.retry(RETRY_PARAMS)
+@tenacity.retry(**RETRY_PARAMS)
 def process(r, message):
-    if message.author in admins():
+    if message.author.name in admins():
         admin_commands()
     else:
         forward(r, message, admins())
 
-@tenacity.retry(RETRY_PARAMS_SHORT)
+@tenacity.retry(**RETRY_PARAMS_SHORT)
 def scan_inbox(r):
     unread = r.inbox.unread()
     for new in unread:
@@ -48,7 +48,7 @@ def send_message(r, header, body, user=None, users=None):
     if user is None and users is None:
         raise ValueError("send_message expects user argument")
 
-    @tenacity.retry(RETRY_PARAMS)
+    @tenacity.retry(**RETRY_PARAMS)
     def try_send(r, header, body, user):
         r.redditor(user).message(header, body)
 
@@ -59,8 +59,8 @@ def send_message(r, header, body, user=None, users=None):
             try_send(r, header, body, u)
 
 def forward(r, message, recipients):
-    altered_header = message.author + " sent:- " + message.header
-    send_message(r, altered_header, message.body, recipients)
+    altered_header = message.author + " sent:- " + message.subject
+    send_message(r, altered_header, message.body, users=recipients)
 
 def read_ini():
     cfg = configparser.ConfigParser()
